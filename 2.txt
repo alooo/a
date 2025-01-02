@@ -1,0 +1,131 @@
+// game.js
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Tạo các đối tượng game
+const player = {
+    x: 150,
+    y: 500,
+    width: 50,
+    height: 50,
+    speed: 5,
+    jumpHeight: 15,
+    isJumping: false,
+    dy: 0
+};
+
+// Tạo các chướng ngại vật
+let obstacles = [];
+
+// Khởi tạo một số biến trò chơi
+let score = 0;
+let isGameOver = false;
+
+// Vẽ người chơi
+function drawPlayer() {
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+}
+
+// Cập nhật vị trí người chơi khi di chuyển
+function updatePlayerPosition() {
+    if (player.isJumping) {
+        player.dy += 1; // Gia tốc trọng lực
+        player.y -= player.dy;
+        if (player.y >= 500) {
+            player.y = 500; // Chạm đất
+            player.isJumping = false;
+            player.dy = 0;
+        }
+    }
+}
+
+// Tạo các chướng ngại vật
+function createObstacle() {
+    const gap = Math.floor(Math.random() * 250 + 50);
+    obstacles.push({
+        x: canvas.width,
+        y: 500 - gap,
+        width: 20,
+        height: gap,
+        speed: 3
+    });
+}
+
+// Vẽ các chướng ngại vật
+function drawObstacles() {
+    obstacles.forEach((obstacle, index) => {
+        ctx.fillStyle = 'red';
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+    });
+}
+
+// Cập nhật vị trí chướng ngại vật
+function updateObstacles() {
+    obstacles.forEach((obstacle, index) => {
+        obstacle.x -= obstacle.speed;
+        if (obstacle.x + obstacle.width < 0) {
+            obstacles.splice(index, 1); // Xóa chướng ngại vật đã ra ngoài màn hình
+            score += 10; // Tăng điểm
+        }
+    });
+}
+
+// Kiểm tra va chạm
+function checkCollision() {
+    obstacles.forEach(obstacle => {
+        if (
+            player.x < obstacle.x + obstacle.width &&
+            player.x + player.width > obstacle.x &&
+            player.y < obstacle.y + obstacle.height &&
+            player.y + player.height > obstacle.y
+        ) {
+            isGameOver = true;
+        }
+    });
+}
+
+// Hiển thị điểm
+function drawScore() {
+    ctx.fillStyle = 'black';
+    ctx.font = '20px Arial';
+    ctx.fillText(`Score: ${score}`, 10, 30);
+}
+
+// Xử lý các sự kiện bàn phím
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowUp' && !player.isJumping) {
+        player.isJumping = true;
+        player.dy = -player.jumpHeight;
+    }
+    if (event.key === 'ArrowLeft') {
+        player.x -= player.speed;
+    }
+    if (event.key === 'ArrowRight') {
+        player.x += player.speed;
+    }
+});
+
+// Cập nhật và vẽ trò chơi
+function gameLoop() {
+    if (isGameOver) {
+        ctx.fillStyle = 'black';
+        ctx.font = '30px Arial';
+        ctx.fillText('Game Over!', canvas.width / 3, canvas.height / 2);
+        return;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Xóa canvas mỗi lần vẽ lại
+    updatePlayerPosition();
+    drawPlayer();
+    drawScore();
+    drawObstacles();
+    updateObstacles();
+    checkCollision();
+    requestAnimationFrame(gameLoop);
+}
+
+// Tạo chướng ngại vật mỗi 2 giây
+setInterval(createObstacle, 2000);
+
+gameLoop();
